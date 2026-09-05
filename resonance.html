@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>串联谐振回路 - 互动仿真</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(145deg, #0a0e1a 0%, #121830 50%, #1a1f3a 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .container {
+    width: 1000px;
+    max-width: 100%;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 28px 30px 32px;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+  .container::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 20%, rgba(60,120,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: relative; z-index: 1;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .header h1 {
+    color: #fff; font-size: 22px; font-weight: 700;
+    letter-spacing: 3px;
+  }
+  .header h1 span { color: rgba(100,180,255,0.6); }
+  .header .credit {
+    color: rgba(255,255,255,0.2); font-size: 12px; letter-spacing: 1px;
+  }
+  .header .credit .name { color: rgba(251,191,36,0.6); font-weight: 600; }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+    position: relative; z-index: 1;
+  }
+  @media (max-width: 720px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== 左栏 ===== */
+  .left-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  /* 电路图 */
+  .circuit-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+  }
+  .circuit-box .label {
+    color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+    margin-bottom: 8px; text-align: left;
+  }
+  .circuit-svg { width: 100%; height: 100px; }
+
+  /* 参数滑条 */
+  .params-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .params-box .label {
+    color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .param-row {
+    margin-bottom: 14px;
+  }
+  .param-row:last-child { margin-bottom: 0; }
+  .param-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 4px;
+  }
+  .param-header .name {
+    color: rgba(255,255,255,0.5); font-size: 13px;
+  }
+  .param-header .name .sym {
+    color: rgba(100,180,255,0.6); font-weight: 600;
+  }
+  .param-header .val {
+    color: #fbbf24; font-size: 15px; font-weight: 600;
+    font-family: 'Consolas', monospace;
+  }
+  .param-header .val .unit { color: rgba(255,255,255,0.3); font-size: 12px; font-weight: 400; }
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 4px;
+    border-radius: 2px; outline: none;
+    background: rgba(255,255,255,0.1);
+    transition: background 0.2s;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    cursor: pointer; border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 2px 10px rgba(102,126,234,0.3);
+    transition: all 0.2s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 18px rgba(102,126,234,0.5);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    cursor: pointer; border: 2px solid rgba(255,255,255,0.2);
+  }
+
+  /* 计算结果 */
+  .results-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .results-box .label {
+    color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .result-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;
+  }
+  .result-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 10px; border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+  }
+  .result-item .rlabel {
+    color: rgba(255,255,255,0.4); font-size: 12px;
+  }
+  .result-item .rvalue {
+    color: #fff; font-size: 14px; font-weight: 600;
+    font-family: 'Consolas', monospace;
+  }
+  .result-item .rvalue.highlight { color: #fbbf24; }
+  .result-item .rvalue.highlight2 { color: #4ade80; }
+  .result-item .rvalue.highlight3 { color: #f472b6; }
+
+  /* ===== 右栏 ===== */
+  .right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .chart-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+    flex: 1;
+  }
+  .chart-box .label {
+    color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+    margin-bottom: 8px; display: flex; justify-content: space-between;
+  }
+  .chart-box .label .legend {
+    display: flex; gap: 14px; align-items: center;
+  }
+  .chart-box .label .legend .leg-item {
+    display: flex; align-items: center; gap: 4px; font-size: 10px; letter-spacing: 0;
+  }
+  .chart-box .label .legend .leg-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  }
+  #chartCanvas {
+    width: 100%; height: 240px; display: block;
+    border-radius: 8px;
+  }
+
+  .info-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .info-box .label {
+    color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .info-box .text {
+    color: rgba(255,255,255,0.5); font-size: 12px; line-height: 1.8;
+  }
+  .info-box .text .formula {
+    color: rgba(251,191,36,0.5); font-family: 'Consolas', monospace;
+    font-size: 13px;
+  }
+
+  /* 对比模式切换 */
+  .mode-toggle {
+    display: flex; gap: 8px; margin-bottom: 6px;
+  }
+  .mode-toggle .btn {
+    padding: 4px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.3); font-size: 11px;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .mode-toggle .btn.active {
+    background: rgba(100,180,255,0.12); border-color: rgba(100,180,255,0.25);
+    color: rgba(100,180,255,0.7);
+  }
+  .mode-toggle .btn:hover { border-color: rgba(255,255,255,0.15); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>⚡ 串联谐振回路 <span>· 互动仿真</span></h1>
+    <div class="credit">制作者：<span class="name">李俊辉</span></div>
+  </div>
+
+  <div class="main-grid">
+    <!-- ===== 左栏 ===== -->
+    <div class="left-panel">
+      <!-- 电路图 -->
+      <div class="circuit-box">
+        <div class="label">📐 电路模型</div>
+        <svg class="circuit-svg" viewBox="0 0 460 100" preserveAspectRatio="xMidYMid meet">
+          <!-- 主线 -->
+          <line x1="20" y1="50" x2="90" y2="50" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+          <line x1="110" y1="50" x2="170" y2="50" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+          <line x1="190" y1="50" x2="260" y2="50" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+          <line x1="280" y1="50" x2="340" y2="50" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+          <line x1="360" y1="50" x2="440" y2="50" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+
+          <!-- 电阻 R -->
+          <rect x="90" y="35" width="20" height="30" rx="3" fill="none" stroke="#ef4444" stroke-width="2" opacity="0.6"/>
+          <text x="100" y="28" text-anchor="middle" fill="#ef4444" font-size="11" opacity="0.7" font-weight="bold">R</text>
+
+          <!-- 电感 L (线圈) -->
+          <path d="M170,35 Q177,20 184,35 Q191,50 198,35 Q205,20 212,35 Q219,50 226,35
+                   Q233,20 240,35 Q247,50 254,35 Q261,20 268,35 Q275,50 280,35"
+                fill="none" stroke="#4ade80" stroke-width="2" opacity="0.6"/>
+          <text x="225" y="22" text-anchor="middle" fill="#4ade80" font-size="11" opacity="0.7" font-weight="bold">L</text>
+
+          <!-- 电容 C -->
+          <line x1="340" y1="38" x2="340" y2="62" stroke="#60a5fa" stroke-width="2" opacity="0.6"/>
+          <line x1="333" y1="38" x2="347" y2="38" stroke="#60a5fa" stroke-width="3" opacity="0.6"/>
+          <line x1="333" y1="62" x2="347" y2="62" stroke="#60a5fa" stroke-width="3" opacity="0.6"/>
+          <text x="340" y="78" text-anchor="middle" fill="#60a5fa" font-size="11" opacity="0.7" font-weight="bold">C</text>
+
+          <!-- 信号源 -->
+          <circle cx="20" cy="50" r="12" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+          <text x="20" y="54" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="13">~</text>
+          <text x="20" y="74" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="10">Us</text>
+
+          <!-- 电流 I -->
+          <text x="440" y="54" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="12">I</text>
+          <polygon points="440,46 446,50 440,54" fill="rgba(255,255,255,0.15)"/>
+        </svg>
+      </div>
+
+      <!-- 参数调节 -->
+      <div class="params-box">
+        <div class="label">🎛️ 参数调节（拖动滑条）</div>
+        <div class="param-row">
+          <div class="param-header">
+            <span class="name">电阻 <span class="sym">R</span></span>
+            <span class="val" id="rVal">10 <span class="unit">Ω</span></span>
+          </div>
+          <input type="range" id="rSlider" min="1" max="200" value="10" step="1">
+        </div>
+        <div class="param-row">
+          <div class="param-header">
+            <span class="name">电感 <span class="sym">L</span></span>
+            <span class="val" id="lVal">100 <span class="unit">μH</span></span>
+          </div>
+          <input type="range" id="lSlider" min="10" max="500" value="100" step="5">
+        </div>
+        <div class="param-row">
+          <div class="param-header">
+            <span class="name">电容 <span class="sym">C</span></span>
+            <span class="val" id="cVal">200 <span class="unit">pF</span></span>
+          </div>
+          <input type="range" id="cSlider" min="20" max="1000" value="200" step="5">
+        </div>
+        <div class="param-row">
+          <div class="param-header">
+            <span class="name">信号源电压 <span class="sym">Us</span></span>
+            <span class="val" id="uVal">1.0 <span class="unit">V</span></span>
+          </div>
+          <input type="range" id="uSlider" min="0.1" max="5" value="1" step="0.1">
+        </div>
+      </div>
+
+      <!-- 计算结果 -->
+      <div class="results-box">
+        <div class="label">📊 计算结果</div>
+        <div class="result-grid">
+          <div class="result-item"><span class="rlabel">f₀ 谐振频率</span><span class="rvalue highlight" id="resFreq">—</span></div>
+          <div class="result-item"><span class="rlabel">ω₀ 角频率</span><span class="rvalue" id="omega0">—</span></div>
+          <div class="result-item"><span class="rlabel">Q 品质因数</span><span class="rvalue highlight2" id="qFactor">—</span></div>
+          <div class="result-item"><span class="rlabel">B 通频带</span><span class="rvalue highlight3" id="bandwidth">—</span></div>
+          <div class="result-item"><span class="rlabel">f₁ 下截止</span><span class="rvalue" id="f1">—</span></div>
+          <div class="result-item"><span class="rlabel">f₂ 上截止</span><span class="rvalue" id="f2">—</span></div>
+          <div class="result-item"><span class="rlabel">I₀ 谐振电流</span><span class="rvalue" id="i0">—</span></div>
+          <div class="result-item"><span class="rlabel">Z₀ 谐振阻抗</span><span class="rvalue" id="z0">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 右栏 ===== -->
+    <div class="right-panel">
+      <!-- 曲线图 -->
+      <div class="chart-box">
+        <div class="label">
+          <span>📈 谐振曲线 I(f) / I₀</span>
+          <div class="legend">
+            <span class="leg-item"><span class="leg-dot" style="background:#fbbf24"></span>当前</span>
+            <span class="leg-item"><span class="leg-dot" style="background:rgba(255,255,255,0.15)"></span>参考 Q=10</span>
+          </div>
+        </div>
+        <div class="mode-toggle">
+          <button class="btn active" data-mode="single">单曲线</button>
+          <button class="btn" data-mode="compare">对比 Q 值</button>
+        </div>
+        <canvas id="chartCanvas" width="440" height="240"></canvas>
+      </div>
+
+      <!-- 知识说明 -->
+      <div class="info-box">
+        <div class="label">💡 知识要点</div>
+        <div class="text" id="infoText">
+          <b>品质因数</b> <span class="formula">Q = ω₀L / R = 1 / (ω₀CR) = (1/R)·√(L/C)</span><br>
+          <b>通频带</b> <span class="formula">B = f₀ / Q</span> —— Q 值越大，曲线越尖锐，选择性越好，但通频带越窄<br>
+          <b>谐振条件</b> <span class="formula">ω₀ = 1 / √(LC)</span> —— 此时电路呈纯阻性，电流最大
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DOM 引用 ============
+const canvas = document.getElementById('chartCanvas');
+const ctx = canvas.getContext('2d');
+
+const rSlider = document.getElementById('rSlider');
+const lSlider = document.getElementById('lSlider');
+const cSlider = document.getElementById('cSlider');
+const uSlider = document.getElementById('uSlider');
+
+const rVal = document.getElementById('rVal');
+const lVal = document.getElementById('lVal');
+const cVal = document.getElementById('cVal');
+const uVal = document.getElementById('uVal');
+
+const resFreq = document.getElementById('resFreq');
+const omega0 = document.getElementById('omega0');
+const qFactor = document.getElementById('qFactor');
+const bandwidth = document.getElementById('bandwidth');
+const f1 = document.getElementById('f1');
+const f2 = document.getElementById('f2');
+const i0 = document.getElementById('i0');
+const z0 = document.getElementById('z0');
+
+const infoText = document.getElementById('infoText');
+
+let chartMode = 'single'; // 'single' or 'compare'
+
+// ============ 计算 ============
+function getParams() {
+  const R = parseFloat(rSlider.value);
+  const L = parseFloat(lSlider.value) * 1e-6; // μH → H
+  const C = parseFloat(cSlider.value) * 1e-12; // pF → F
+  const Us = parseFloat(uSlider.value);
+  return { R, L, C, Us };
+}
+
+function formatFreq(f) {
+  if (f >= 1e6) return (f / 1e6).toFixed(2) + ' MHz';
+  if (f >= 1e3) return (f / 1e3).toFixed(2) + ' kHz';
+  return f.toFixed(1) + ' Hz';
+}
+
+function formatOmega(w) {
+  if (w >= 1e6) return (w / 1e6).toFixed(2) + ' Mrad/s';
+  if (w >= 1e3) return (w / 1e3).toFixed(2) + ' krad/s';
+  return w.toFixed(1) + ' rad/s';
+}
+
+function calc() {
+  const { R, L, C, Us } = getParams();
+
+  // 谐振角频率
+  const w0 = 1 / Math.sqrt(L * C);
+  // 谐振频率
+  const f0 = w0 / (2 * Math.PI);
+  // 品质因数
+  const Q = w0 * L / R;
+  // 通频带
+  const B = f0 / Q;
+  // 截止频率
+  const f1v = f0 - B / 2;
+  const f2v = f0 + B / 2;
+  // 谐振阻抗
+  const Z0 = R;
+  // 谐振电流
+  const I0 = Us / R;
+
+  // 更新显示
+  resFreq.textContent = formatFreq(f0);
+  omega0.textContent = formatOmega(w0);
+  qFactor.textContent = Q.toFixed(2);
+  bandwidth.textContent = formatFreq(B);
+  f1.textContent = formatFreq(f1v);
+  f2.textContent = formatFreq(f2v);
+  i0.textContent = I0.toFixed(3) + ' A';
+  z0.textContent = Z0.toFixed(1) + ' Ω';
+
+  // 更新参数显示
+  rVal.innerHTML = `${R} <span class="unit">Ω</span>`;
+  lVal.innerHTML = `${parseFloat(lSlider.value)} <span class="unit">μH</span>`;
+  cVal.innerHTML = `${parseFloat(cSlider.value)} <span class="unit">pF</span>`;
+  uVal.innerHTML = `${Us.toFixed(1)} <span class="unit">V</span>`;
+
+  // 更新知识提示
+  updateInfo(Q, B, f0);
+
+  // 绘图
+  drawChart(f0, Q, B, w0, R, L, C, Us);
+}
+
+function updateInfo(Q, B, f0) {
+  let advice = '';
+  if (Q < 3) {
+    advice = '⚠️ Q 值过低，通频带过宽，选择性差，电路难以选频。';
+  } else if (Q < 10) {
+    advice = '🔸 Q 值适中，通频带较宽，适合对选择性要求不高的场景。';
+  } else if (Q < 50) {
+    advice = '✅ Q 值良好，兼顾选择性和通频带，适合大多数应用。';
+  } else if (Q < 200) {
+    advice = '✅ Q 值很高，选择性好，但通频带窄，适合精密选频。';
+  } else {
+    advice = '⚡ Q 值极高，曲线非常尖锐，通频带极窄，适合高精度选频。';
+  }
+
+  infoText.innerHTML = `
+    <b>品质因数</b> <span class="formula">Q = ω₀L / R = ${Q.toFixed(2)}</span><br>
+    <b>通频带</b> <span class="formula">B = f₀ / Q = ${formatFreq(B)}</span><br>
+    <b>谐振频率</b> <span class="formula">f₀ = 1/(2π√(LC)) = ${formatFreq(f0)}</span><br>
+    ${advice}
+  `;
+}
+
+// ============ 绘图 ============
+function drawChart(f0, Q, B, w0, R, L, C, Us) {
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // 边距
+  const pad = { top: 20, right: 20, bottom: 35, left: 50 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
+
+  // 频率范围：0.1f0 ~ 3f0
+  const fMin = 0.1 * f0;
+  const fMax = 3 * f0;
+
+  // 归一化频率 → x
+  function fx(f) { return pad.left + (Math.log(f) - Math.log(fMin)) / (Math.log(fMax) - Math.log(fMin)) * cw; }
+  function fy(v) { return pad.top + ch - v * ch; }
+
+  // 计算谐振曲线
+  function calcCurve(Qv, f0v) {
+    const pts = [];
+    const steps = 300;
+    for (let i = 0; i <= steps; i++) {
+      const f = fMin * Math.pow(fMax / fMin, i / steps);
+      const ratio = f / f0v;
+      const amp = 1 / Math.sqrt(1 + Qv * Qv * Math.pow(ratio - 1 / ratio, 2));
+      pts.push({ f, amp });
+    }
+    return pts;
+  }
+
+  // ===== 绘制网格 =====
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 10; i++) {
+    const x = pad.left + i * cw / 10;
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + ch); ctx.stroke();
+  }
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.top + i * ch / 5;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cw, y); ctx.stroke();
+  }
+
+  // ===== 坐标轴 =====
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ch); ctx.lineTo(pad.left + cw, pad.top + ch);
+  ctx.stroke();
+
+  // ===== Y 轴标签 =====
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    const v = 1 - i / 5;
+    const y = pad.top + i * ch / 5;
+    ctx.fillText(v.toFixed(1), pad.left - 6, y);
+  }
+  ctx.fillText('I/I₀', pad.left - 6, pad.top - 6);
+
+  // ===== X 轴标签 =====
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const xTicks = [f0 / 4, f0 / 2, f0, f0 * 1.5, f0 * 2, f0 * 3];
+  for (const f of xTicks) {
+    if (f < fMin || f > fMax) continue;
+    const x = fx(f);
+    ctx.fillText(formatFreq(f), x, pad.top + ch + 4);
+  }
+  ctx.textAlign = 'right';
+  ctx.fillText('f / Hz', pad.left + cw, pad.top + ch + 4);
+
+  // ===== 绘制参考曲线 (Q=10) =====
+  const refPts = calcCurve(10, f0);
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  for (const pt of refPts) {
+    const x = fx(pt.f);
+    const y = fy(pt.amp);
+    if (pt === refPts[0]) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ===== 绘制主曲线 =====
+  const mainPts = calcCurve(Q, f0);
+  ctx.beginPath();
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = 'rgba(251,191,36,0.3)';
+  ctx.shadowBlur = 8;
+  for (const pt of mainPts) {
+    const x = fx(pt.f);
+    const y = fy(pt.amp);
+    if (pt === mainPts[0]) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // ===== 对比模式：绘制多条曲线 =====
+  if (chartMode === 'compare') {
+    const qValues = [5, 20, 50, 100, 200];
+    const qColors = ['rgba(100,200,255,0.3)', 'rgba(74,222,128,0.3)', 'rgba(251,191,36,0.3)', 'rgba(244,114,182,0.3)', 'rgba(255,100,100,0.3)'];
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 3]);
+    for (let qi = 0; qi < qValues.length; qi++) {
+      const qv = qValues[qi];
+      const pts = calcCurve(qv, f0);
+      ctx.beginPath();
+      ctx.strokeStyle = qColors[qi];
+      for (const pt of pts) {
+        const x = fx(pt.f);
+        const y = fy(pt.amp);
+        if (pt === pts[0]) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // 图例
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = '10px sans-serif';
+    let lx = pad.left + 4;
+    const ly = pad.top + 4;
+    for (let qi = 0; qi < qValues.length; qi++) {
+      ctx.fillStyle = qValues[qi] === Q ? '#fbbf24' : qColors[qi];
+      ctx.fillText('Q=' + qValues[qi], lx, ly);
+      lx += ctx.measureText('Q=' + qValues[qi]).width + 8;
+    }
+  }
+
+  // ===== 标记谐振点 =====
+  const rx = fx(f0);
+  const ry = fy(1);
+  ctx.beginPath();
+  ctx.arc(rx, ry, 5, 0, 2 * Math.PI);
+  ctx.fillStyle = '#ff6b6b';
+  ctx.shadowColor = 'rgba(255,107,107,0.5)';
+  ctx.shadowBlur = 12;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 标记截止频率点
+  if (B > 0 && Q > 1) {
+    const f1v = f0 - B / 2;
+    const f2v = f0 + B / 2;
+    if (f1v >= fMin && f2v <= fMax) {
+      const half = 1 / Math.sqrt(2);
+      const x1 = fx(f1v);
+      const x2 = fx(f2v);
+      const yh = fy(half);
+
+      // 水平虚线
+      ctx.strokeStyle = 'rgba(255,107,107,0.2)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(pad.left, yh); ctx.lineTo(pad.left + cw, yh);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 标记点
+      ctx.beginPath();
+      ctx.arc(x1, yh, 3.5, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(255,107,107,0.5)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x2, yh, 3.5, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // 带宽区间
+      ctx.fillStyle = 'rgba(255,107,107,0.06)';
+      ctx.fillRect(x1, yh, x2 - x1, pad.top + ch - yh);
+
+      // 标注 B
+      ctx.fillStyle = 'rgba(255,107,107,0.4)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('B = ' + formatFreq(B), (x1 + x2) / 2, yh - 4);
+
+      // 0.707 标注
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,107,107,0.3)';
+      ctx.font = '9px sans-serif';
+      ctx.fillText('0.707', pad.left - 4, yh);
+    }
+  }
+
+  // ===== 标注 Q 值 =====
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Q = ' + Q.toFixed(2), pad.left + 4, pad.top + ch - 4);
+}
+
+// ============ 事件绑定 ============
+[rSlider, lSlider, cSlider, uSlider].forEach(slider => {
+  slider.addEventListener('input', calc);
+});
+
+// 模式切换
+document.querySelectorAll('.mode-toggle .btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-toggle .btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    chartMode = btn.dataset.mode;
+    calc();
+  });
+});
+
+// ============ 窗口自适应 ============
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width - 32;
+  canvas.height = 240;
+  calc();
+}
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 100);
+</script>
+</body>
+</html>
