@@ -22,7 +22,7 @@
     padding: 40px 50px;
     border: 1px solid rgba(255,255,255,0.08);
     text-align: center;
-    max-width: 500px;
+    max-width: 520px;
     width: 100%;
     box-shadow: 0 30px 80px rgba(0,0,0,0.5);
   }
@@ -30,8 +30,8 @@
   .sub { color: rgba(255,255,255,0.3); font-size: 14px; margin-bottom: 30px; }
   .links { display: flex; flex-direction: column; gap: 14px; }
   .link-btn {
-    display: flex; align-items: center; justify-content: center;
-    gap: 10px; padding: 18px 24px;
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 24px;
     border-radius: 14px;
     text-decoration: none;
     color: #fff;
@@ -39,6 +39,7 @@
     font-weight: 600;
     transition: all 0.25s;
     border: 1px solid rgba(255,255,255,0.08);
+    text-align: left;
   }
   .link-btn:hover {
     transform: translateY(-3px);
@@ -54,8 +55,9 @@
     border-color: rgba(251,191,36,0.2);
   }
   .link-btn.resonance:hover { background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.15)); }
-  .link-btn .icon { font-size: 28px; }
-  .link-btn .desc { display: block; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.3); margin-top: 2px; }
+  .link-btn .icon { font-size: 32px; flex-shrink: 0; }
+  .link-btn .info .title { display: block; }
+  .link-btn .info .desc { display: block; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.3); margin-top: 3px; }
   .footer { margin-top: 28px; color: rgba(255,255,255,0.15); font-size: 12px; letter-spacing: 1px; }
 </style>
 </head>
@@ -64,13 +66,19 @@
     <h1>🎓 互动学习</h1>
     <div class="sub">制作者：李俊辉</div>
     <div class="links">
-      <a href="index.html" class="link-btn radio">
+      <a href="radio-game.html" class="link-btn radio">
         <span class="icon">📻</span>
-        <span>超外差收音机流程填空<span class="desc">将收音机关键流程填入对应空位</span></span>
+        <span class="info">
+          <span class="title">超外差收音机流程填空</span>
+          <span class="desc">将收音机关键流程填入对应空位</span>
+        </span>
       </a>
       <a href="resonance.html" class="link-btn resonance">
         <span class="icon">⚡</span>
-        <span>串联谐振回路仿真<span class="desc">调节参数理解 Q 与通频带 B 的关系</span></span>
+        <span class="info">
+          <span class="title">串联谐振回路仿真</span>
+          <span class="desc">调节参数理解 Q 与通频带 B 的关系</span>
+        </span>
       </a>
     </div>
     <div class="footer">LJH0721 · GitHub Pages</div>
