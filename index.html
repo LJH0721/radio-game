@@ -1,87 +1,41 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>李俊辉 - 互动学习网页</title>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>李俊辉 - 互动学习</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-    background: linear-gradient(145deg, #0a0e1a, #1a1f3a);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-  }
-  .card {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 40px 50px;
-    border: 1px solid rgba(255,255,255,0.08);
-    text-align: center;
-    max-width: 520px;
-    width: 100%;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-  }
-  h1 { color: #fff; font-size: 26px; margin-bottom: 6px; letter-spacing: 3px; }
-  .sub { color: rgba(255,255,255,0.3); font-size: 14px; margin-bottom: 30px; }
-  .links { display: flex; flex-direction: column; gap: 14px; }
-  .link-btn {
-    display: flex; align-items: center; gap: 16px;
-    padding: 20px 24px;
-    border-radius: 14px;
-    text-decoration: none;
-    color: #fff;
-    font-size: 17px;
-    font-weight: 600;
-    transition: all 0.25s;
-    border: 1px solid rgba(255,255,255,0.08);
-    text-align: left;
-  }
-  .link-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-  }
-  .link-btn.radio {
-    background: linear-gradient(135deg, rgba(100,180,255,0.15), rgba(59,130,246,0.1));
-    border-color: rgba(100,180,255,0.2);
-  }
-  .link-btn.radio:hover { background: linear-gradient(135deg, rgba(100,180,255,0.25), rgba(59,130,246,0.15)); }
-  .link-btn.resonance {
-    background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1));
-    border-color: rgba(251,191,36,0.2);
-  }
-  .link-btn.resonance:hover { background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.15)); }
-  .link-btn .icon { font-size: 32px; flex-shrink: 0; }
-  .link-btn .info .title { display: block; }
-  .link-btn .info .desc { display: block; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.3); margin-top: 3px; }
-  .footer { margin-top: 28px; color: rgba(255,255,255,0.15); font-size: 12px; letter-spacing: 1px; }
-</style>
-</head>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:linear-gradient(145deg,#0a0e1a,#1a1f3a);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+.card{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);border-radius:24px;padding:38px 44px;border:1px solid rgba(255,255,255,0.06);max-width:560px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,0.5);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(100,180,255,0.04) 0%,transparent 60%);pointer-events:none}
+h1{color:#fff;font-size:26px;letter-spacing:3px;position:relative;z-index:1;text-align:center}
+.sub{color:rgba(255,255,255,0.2);font-size:13px;letter-spacing:2px;text-align:center;margin-bottom:24px;position:relative;z-index:1}
+.links{display:flex;flex-direction:column;gap:12px;position:relative;z-index:1}
+.link-btn{display:flex;align-items:center;gap:16px;padding:18px 22px;border-radius:14px;text-decoration:none;color:#fff;font-size:15px;font-weight:600;transition:all 0.25s;border:1px solid rgba(255,255,255,0.06);text-align:left}
+.link-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.link-btn .ic{font-size:28px;flex-shrink:0}
+.link-btn .info .title{display:block;font-size:15px}
+.link-btn .info .desc{display:block;font-size:11px;font-weight:400;color:rgba(255,255,255,0.25);margin-top:2px}
+.link-btn.r1{background:linear-gradient(135deg,rgba(100,180,255,0.12),rgba(59,130,246,0.08));border-color:rgba(100,180,255,0.15)}
+.link-btn.r1:hover{background:linear-gradient(135deg,rgba(100,180,255,0.2),rgba(59,130,246,0.12))}
+.link-btn.r2{background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(245,158,11,0.08));border-color:rgba(251,191,36,0.15)}
+.link-btn.r2:hover{background:linear-gradient(135deg,rgba(251,191,36,0.2),rgba(245,158,11,0.12))}
+.link-btn.r3{background:linear-gradient(135deg,rgba(52,211,153,0.12),rgba(16,185,129,0.08));border-color:rgba(52,211,153,0.15)}
+.link-btn.r3:hover{background:linear-gradient(135deg,rgba(52,211,153,0.2),rgba(16,185,129,0.12))}
+.link-btn.r4{background:linear-gradient(135deg,rgba(244,114,182,0.12),rgba(236,72,153,0.08));border-color:rgba(244,114,182,0.15)}
+.link-btn.r4:hover{background:linear-gradient(135deg,rgba(244,114,182,0.2),rgba(236,72,153,0.12))}
+.footer{text-align:center;margin-top:20px;color:rgba(255,255,255,0.1);font-size:12px;letter-spacing:2px;position:relative;z-index:1}
+.footer .name{color:rgba(251,191,36,0.3);font-weight:600}
+</style></head>
 <body>
-  <div class="card">
-    <h1>🎓 互动学习</h1>
-    <div class="sub">制作者：李俊辉</div>
-    <div class="links">
-      <a href="radio-game.html" class="link-btn radio">
-        <span class="icon">📻</span>
-        <span class="info">
-          <span class="title">超外差收音机流程填空</span>
-          <span class="desc">将收音机关键流程填入对应空位</span>
-        </span>
-      </a>
-      <a href="resonance.html" class="link-btn resonance">
-        <span class="icon">⚡</span>
-        <span class="info">
-          <span class="title">串联谐振回路仿真</span>
-          <span class="desc">调节参数理解 Q 与通频带 B 的关系</span>
-        </span>
-      </a>
-    </div>
-    <div class="footer">LJH0721 · GitHub Pages</div>
-  </div>
+<div class="card">
+<h1>🎓 互动学习</h1>
+<div class="sub">制作者：李俊辉</div>
+<div class="links">
+<a href="radio-game.html" class="link-btn r1"><span class="ic">📻</span><span class="info"><span class="title">超外差收音机流程填空</span><span class="desc">将收音机关键流程填入对应空位</span></span></a>
+<a href="resonance.html" class="link-btn r2"><span class="ic">⚡</span><span class="info"><span class="title">串联谐振回路仿真</span><span class="desc">理解品质因数Q与通频带B的关系</span></span></a>
+<a href="amplifier.html" class="link-btn r3"><span class="ic">🔊</span><span class="info"><span class="title">高频谐振功放仿真</span><span class="desc">欠压/过压状态时域波形与频谱分析</span></span></a>
+<a href="venn.html" class="link-btn r4"><span class="ic">🔄</span><span class="info"><span class="title">耦合回路调谐韦恩图</span><span class="desc">五概念之间的包含关系</span></span></a>
+</div>
+<div class="footer">制作者：<span class="name">李俊辉</span> · LJH0721</div>
+</div>
 </body>
 </html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高频谐振功放 - 互动仿真</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+    background:linear-gradient(145deg,#0a0e1a,#141830,#1a1f3a);
+    min-height:100vh;display:flex;justify-content:center;align-items:center;padding:16px
+  }
+  .wrap{
+    width:1100px;max-width:100%;background:rgba(255,255,255,0.04);
+    backdrop-filter:blur(16px);border-radius:24px;padding:24px 22px 20px;
+    border:1px solid rgba(255,255,255,0.06);box-shadow:0 30px 80px rgba(0,0,0,0.5);
+    position:relative;overflow:hidden
+  }
+  .wrap::before{
+    content:'';position:absolute;top:-60%;left:-50%;width:200%;height:200%;
+    background:radial-gradient(ellipse at 30% 20%,rgba(100,180,255,0.04) 0%,transparent 60%);
+    pointer-events:none
+  }
+  .header{text-align:center;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+  .header h1{color:#fff;font-size:24px;font-weight:700;letter-spacing:3px}
+  .header .sub{color:rgba(255,255,255,0.25);font-size:12px;margin-top:4px;letter-spacing:2px}
+  .header .credit{color:rgba(255,255,255,0.12);font-size:12px;margin-top:2px}
+  .header .credit .nm{color:rgba(251,191,36,0.45);font-weight:600}
+
+  .layout{display:flex;gap:18px;margin-top:14px;position:relative;z-index:1;flex-wrap:wrap}
+
+  /* ===== 左侧控制面板 ===== */
+  .ctrl-panel{
+    width:260px;flex-shrink:0;background:rgba(255,255,255,0.03);
+    border-radius:16px;padding:16px 18px;border:1px solid rgba(255,255,255,0.05)
+  }
+  .ctrl-panel h3{color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:2px;margin-bottom:12px;font-weight:400}
+  .param-group{margin-bottom:12px}
+  .param-group label{display:flex;justify-content:space-between;color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:2px}
+  .param-group label .val{color:#60a5fa;font-weight:600}
+  .param-group input[type=range]{
+    width:100%;height:4px;-webkit-appearance:none;background:rgba(255,255,255,0.1);
+    border-radius:2px;outline:none;transition:background 0.2s
+  }
+  .param-group input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:linear-gradient(135deg,#60a5fa,#3b82f6);cursor:pointer;border:2px solid rgba(255,255,255,0.15);
+    box-shadow:0 0 12px rgba(96,165,250,0.2)
+  }
+  .param-group input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:#60a5fa;cursor:pointer;border:none
+  }
+  .param-divider{border:none;border-top:1px solid rgba(255,255,255,0.05);margin:12px 0}
+
+  /* 状态指示器 */
+  .state-box{
+    margin-top:10px;padding:12px;border-radius:12px;text-align:center;
+    background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
+    transition:all 0.4s
+  }
+  .state-box .label{color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:1px}
+  .state-box .state{
+    font-size:22px;font-weight:800;letter-spacing:2px;margin-top:4px;transition:color 0.4s
+  }
+  .state-box .state.under{color:#60a5fa}
+  .state-box .state.critical{color:#fbbf24}
+  .state-box .state.over{color:#ef4444}
+  .state-box .desc{font-size:11px;color:rgba(255,255,255,0.2);margin-top:2px}
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:10px}
+  .stat-item{display:flex;justify-content:space-between;color:rgba(255,255,255,0.35);font-size:11px}
+  .stat-item span:last-child{color:rgba(255,255,255,0.6);font-weight:600}
+
+  /* ===== 右侧波形区 ===== */
+  .plots{flex:1;min-width:0}
+  .plot-row{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .plot-card{
+    flex:1;min-width:200px;background:rgba(255,255,255,0.02);border-radius:12px;
+    padding:10px 12px 8px;border:1px solid rgba(255,255,255,0.04)
+  }
+  .plot-card .ptitle{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:4px
+  }
+  .plot-card .ptitle .nm{color:rgba(255,255,255,0.5);font-size:12px;font-weight:600}
+  .plot-card .ptitle .tag{font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.25)}
+  .plot-card canvas{width:100%;height:100px;display:block;border-radius:6px;background:rgba(0,0,0,0.2)}
+
+  /* 频谱图 */
+  .spec-row{display:flex;gap:12px;flex-wrap:wrap}
+  .spec-card{flex:1;min-width:200px;background:rgba(255,255,255,0.02);border-radius:12px;padding:10px 12px 8px;border:1px solid rgba(255,255,255,0.04)}
+  .spec-card .ptitle{color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;margin-bottom:4px}
+  .spec-card canvas{width:100%;height:120px;display:block;border-radius:6px;background:rgba(0,0,0,0.2)}
+
+  @media(max-width:800px){
+    .ctrl-panel{width:100%}
+    .plot-row{flex-direction:column}
+    .spec-row{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <h1>⚡ 高频谐振功放 · 互动仿真</h1>
+    <div class="sub">调整参数观察欠压/过压状态下的时域波形与频谱</div>
+    <div class="credit">制作者：<span class="nm">李俊辉</span></div>
+  </div>
+
+  <div class="layout">
+    <!-- 左侧控制面板 -->
+    <div class="ctrl-panel">
+      <h3>▎控制参数</h3>
+
+      <div class="param-group">
+        <label>输入电压 Vbm <span class="val" id="vbmVal">1.5</span> V</label>
+        <input type="range" id="vbmSlider" min="0.3" max="5" step="0.1" value="1.5">
+      </div>
+      <div class="param-group">
+        <label>基极偏置 Vbb <span class="val" id="vbbVal">-0.5</span> V</label>
+        <input type="range" id="vbbSlider" min="-3" max="0" step="0.1" value="-0.5">
+      </div>
+      <div class="param-group">
+        <label>电源电压 Vcc <span class="val" id="vccVal">24</span> V</label>
+        <input type="range" id="vccSlider" min="6" max="60" step="1" value="24">
+      </div>
+      <div class="param-group">
+        <label>负载电阻 Rp <span class="val" id="rpVal">80</span> Ω</label>
+        <input type="range" id="rpSlider" min="10" max="300" step="5" value="80">
+      </div>
+      <div class="param-group">
+        <label>导通角 θ <span class="val" id="thetaVal">120</span>°</label>
+        <span style="display:block;font-size:10px;color:rgba(255,255,255,0.15);margin-top:-2px">（由 Vbb / Vbm 决定）</span>
+      </div>
+
+      <hr class="param-divider">
+
+      <div class="state-box" id="stateBox">
+        <div class="label">工作状态</div>
+        <div class="state critical" id="stateText">临界状态</div>
+        <div class="desc" id="stateDesc">Vcm = 0.95 Vcc</div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-item">导通角 θ<span id="statTheta">120°</span></div>
+        <div class="stat-item">Icm1<span id="statIcm1">0.00A</span></div>
+        <div class="stat-item">Vcm<span id="statVcm">0.0V</span></div>
+        <div class="stat-item">效率 η<span id="statEta">0%</span></div>
+      </div>
+    </div>
+
+    <!-- 右侧波形区 -->
+    <div class="plots">
+      <div class="plot-row">
+        <div class="plot-card">
+          <div class="ptitle"><span class="nm">v<sub>b</sub>(t) — 输入电压</span><span class="tag">时域</span></div>
+          <canvas id="canvasVbm" height="100"></canvas>
+        </div>
+        <div class="plot-card">
+          <div class="ptitle"><span class="nm">i<sub>c</sub>(t) — 集电极电流</span><span class="tag">时域</span></div>
+          <canvas id="canvasIc" height="100"></canvas>
+        </div>
+        <div class="plot-card">
+          <div class="ptitle"><span class="nm">v<sub>c</sub>(t) — 输出电压</span><span class="tag">时域</span></div>
+          <canvas id="canvasVc" height="100"></canvas>
+        </div>
+      </div>
+
+      <div class="spec-row">
+        <div class="spec-card">
+          <div class="ptitle">i<sub>c</sub> 频谱</div>
+          <canvas id="specIc" height="120"></canvas>
+        </div>
+        <div class="spec-card">
+          <div class="ptitle">v<sub>c</sub> 频谱</div>
+          <canvas id="specVc" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DOM refs ============
+const $ = id => document.getElementById(id);
+const vbmSlider = $('vbmSlider'), vbbSlider = $('vbbSlider');
+const vccSlider = $('vccSlider'), rpSlider  = $('rpSlider');
+const cVbm = $('canvasVbm'), cIc = $('canvasIc'), cVc = $('canvasVc');
+const sIc = $('specIc'), sVc = $('specVc');
+
+// ============ FFT ============
+function fft(re, im){
+  const n = re.length;
+  if(n <= 1) return;
+  const half = n>>1;
+  const reEven = new Float64Array(half), imEven = new Float64Array(half);
+  const reOdd  = new Float64Array(half), imOdd  = new Float64Array(half);
+  for(let i=0;i<half;i++){
+    reEven[i]=re[2*i]; imEven[i]=im[2*i];
+    reOdd[i]=re[2*i+1]; imOdd[i]=im[2*i+1];
+  }
+  fft(reEven,imEven); fft(reOdd,imOdd);
+  for(let k=0;k<half;k++){
+    const a = -2*Math.PI*k/n;
+    const cosA = Math.cos(a), sinA = Math.sin(a);
+    const reT = reOdd[k]*cosA - imOdd[k]*sinA;
+    const imT = reOdd[k]*sinA + imOdd[k]*cosA;
+    re[k] = reEven[k] + reT; im[k] = imEven[k] + imT;
+    re[k+half] = reEven[k] - reT; im[k+half] = imEven[k] - imT;
+  }
+}
+
+// ============ 仿真模型 ============
+function simulate(Vbm, Vbb, Vcc, Rp){
+  const N = 1024;
+  const re = new Float64Array(N), im = new Float64Array(N);
+  const icWave = new Float64Array(N);
+  const vbWave = new Float64Array(N);
+  const vcWave = new Float64Array(N);
+  const icSpec = new Float64Array(N>>1);
+  const vcSpec = new Float64Array(N>>1);
+
+  // 导通角
+  const ratio = -Vbb / Vbm;
+  const theta = ratio >= 1 ? 0 : (ratio <= -1 ? Math.PI : Math.acos(Math.max(-1,Math.min(1,ratio))));
+  const thetaDeg = theta * 180 / Math.PI;
+  const cosTh2 = Math.cos(theta/2);
+
+  // 电流脉冲计算（欠压基准）
+  const gm = 0.12; // 跨导
+  const IcMax = gm * Vbm * (1 - cosTh2);
+  const alpha0 = theta > 0.01 ? (Math.sin(theta/2) - theta/2*cosTh2) / (Math.PI * (1-cosTh2)) : 0;
+  const alpha1 = theta > 0.01 ? (theta/2 - Math.sin(theta)/2) / (Math.PI * (1-cosTh2)) : 0;
+
+  // 估算基波电流和电压
+  let Icm1 = IcMax * alpha1;
+  let Vcm = Icm1 * Rp;
+
+  // 判断工作状态
+  let state; // 0=欠压 1=临界 2=过压
+  let dipDepth = 0;
+  const Vcesat = 1.5;
+
+  if (Vcm < 0.85 * (Vcc - Vcesat)) {
+    state = 0; // 欠压
+  } else if (Vcm < 0.95 * (Vcc - Vcesat)) {
+    state = 1; // 临界
+    dipDepth = (Vcm - 0.85*(Vcc-Vcesat)) / (0.1*(Vcc-Vcesat)) * 0.3;
+  } else {
+    state = 2; // 过压
+    const excess = (Vcm - 0.95*(Vcc-Vcesat)) / (Vcc-Vcesat);
+    dipDepth = 0.3 + Math.min(excess * 2.5, 0.6);
+    dipDepth = Math.min(dipDepth, 0.85);
+    // 过压下实际Vcm受限制
+    Vcm = Vcc - Vcesat;
+    Icm1 = Vcm / Rp;
+  }
+
+  // 生成时域波形
+  for(let i=0;i<N;i++){
+    const w = 2*Math.PI*i/N;
+    // 输入电压
+    const vb = Vbb + Vbm * Math.cos(w);
+    vbWave[i] = vb;
+
+    // 集电极电流脉冲
+    const pulse = (Math.cos(w) - cosTh2) / (1 - cosTh2);
+    let ic = 0;
+    if(Math.cos(w) >= cosTh2 && theta > 0.01){
+      ic = IcMax * pulse;
+      // 过压凹陷
+      if(dipDepth > 0.01){
+        const dip = 1 - dipDepth * Math.pow(Math.cos(w), 2);
+        ic *= Math.max(dip, 0.1);
+      }
+    }
+    icWave[i] = ic;
+
+    // 输出电压 (谐振回路滤波后 ≈ 基波正弦)
+    const vc = Vcm * Math.cos(w + Math.PI); // 反相
+    vcWave[i] = vc;
+  }
+
+  // FFT
+  const nfft = 512;
+  const re2 = new Float64Array(nfft);
+  const im2 = new Float64Array(nfft);
+
+  // ic spectrum
+  for(let i=0;i<nfft;i++){
+    re2[i] = icWave[i];
+    im2[i] = 0;
+  }
+  fft(re2, im2);
+  for(let k=0;k<nfft/2;k++){
+    icSpec[k] = Math.sqrt(re2[k]*re2[k]+im2[k]*im2[k])/nfft;
+  }
+
+  // vc spectrum
+  for(let i=0;i<nfft;i++){
+    re2[i] = vcWave[i];
+    im2[i] = 0;
+  }
+  fft(re2, im2);
+  for(let k=0;k<nfft/2;k++){
+    vcSpec[k] = Math.sqrt(re2[k]*re2[k]+im2[k]*im2[k])/nfft;
+  }
+
+  // 直流分量
+  const Icm0 = IcMax * alpha0;
+  const eta = Vcm * Icm1 / (2 * Vcc * Icm0);
+
+  return { vbWave, icWave, vcWave, icSpec, vcSpec, thetaDeg, IcMax, Icm0, Icm1, Vcm, eta, state, dipDepth, N };
+}
+
+// ============ 绘图 ============
+function drawWaveform(canvas, data, color, label, yLabel, zeroLine){
+  const c = canvas, rect = c.parentElement.getBoundingClientRect();
+  const W = rect.width - 4, H = c.height;
+  c.width = W * devicePixelRatio; c.height = H * devicePixelRatio;
+  c.style.width = W+'px'; c.style.height = H+'px';
+  const ctx = c.getContext('2d');
+  const dpr = devicePixelRatio;
+  ctx.scale(dpr,dpr);
+
+  const pad = {t:14,b:14,l:28,r:8};
+  const gw = W - pad.l - pad.r, gh = H - pad.t - pad.b;
+
+  ctx.clearRect(0,0,W,H);
+
+  // 网格
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 0.5;
+  for(let i=0;i<5;i++){
+    const y = pad.t + gh*i/4;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+  }
+
+  // 零线
+  if(zeroLine !== undefined){
+    const zy = pad.t + gh*(1 - (zeroLine)/(1.2));
+    if(zy >= pad.t && zy <= pad.t+gh){
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(pad.l,zy); ctx.lineTo(W-pad.r,zy); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  if(!data || data.length<2) return;
+
+  // 找出数据范围
+  let min=Infinity, max=-Infinity;
+  for(const v of data){ if(v<min) min=v; if(v>max) max=v; }
+  const range = Math.max(max-min, 0.01);
+  const mid = (max+min)/2;
+  const scale = Math.max(Math.abs(max-mid), Math.abs(min-mid), 0.01);
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color.replace(')','0.15)').replace('rgb','rgba');
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  const n = data.length;
+  for(let i=0;i<n;i++){
+    const x = pad.l + gw*i/n;
+    const y = pad.t + gh*(0.5 - (data[i]-mid)/(scale*2.4));
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Y轴标签
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(max.toFixed(1), pad.l-3, pad.t+9);
+  ctx.fillText(min.toFixed(1), pad.l-3, pad.t+gh);
+}
+
+function drawSpectrum(canvas, spec, color, maxFreq){
+  const c = canvas, rect = c.parentElement.getBoundingClientRect();
+  const W = rect.width - 4, H = c.height;
+  c.width = W * devicePixelRatio; c.height = H * devicePixelRatio;
+  c.style.width = W+'px'; c.style.height = H+'px';
+  const ctx = c.getContext('2d');
+  const dpr = devicePixelRatio;
+  ctx.scale(dpr,dpr);
+
+  const pad = {t:12,b:20,l:28,r:8};
+  const gw = W - pad.l - pad.r, gh = H - pad.t - pad.b;
+  ctx.clearRect(0,0,W,H);
+
+  if(!spec || spec.length<3) return;
+
+  // 只显示前10次谐波
+  const nBars = Math.min(10, Math.floor(spec.length/2));
+  let maxVal = 0;
+  for(let k=0;k<nBars;k++){ if(spec[k]>maxVal) maxVal=spec[k]; }
+  maxVal = Math.max(maxVal, 0.001);
+
+  const barW = gw / nBars * 0.6;
+
+  for(let k=0;k<nBars;k++){
+    const h = (spec[k]/maxVal) * gh * 0.85;
+    const x = pad.l + gw*k/nBars + gw/nBars*0.2;
+    const y = pad.t + gh - h;
+
+    // 渐变
+    const grad = ctx.createLinearGradient(0,y,0,pad.t+gh);
+    const c2 = color.replace(')','0.6)').replace('rgb','rgba');
+    const c3 = color.replace(')','0.15)').replace('rgb','rgba');
+    grad.addColorStop(0,color);
+    grad.addColorStop(1,c3);
+    ctx.fillStyle = grad;
+
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = c2;
+
+    const bw2 = Math.max(barW * (1 - k*0.05), barW*0.4);
+    ctx.fillRect(x, y, bw2, h);
+    ctx.shadowBlur = 0;
+
+    // 频率标签
+    if(k%2===0 || k===1){
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(k===0?'DC':k+'fo', x+bw2/2, pad.t+gh+13);
+    }
+  }
+
+  // 最大值标签
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.font = '9px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(maxVal.toFixed(2), pad.l-3, pad.t+10);
+}
+
+// ============ 主更新 ============
+function update(){
+  const Vbm = parseFloat(vbmSlider.value);
+  const Vbb = parseFloat(vbbSlider.value);
+  const Vcc = parseFloat(vccSlider.value);
+  const Rp  = parseFloat(rpSlider.value);
+
+  // 显示值
+  $('vbmVal').textContent = Vbm.toFixed(1);
+  $('vbbVal').textContent = Vbb.toFixed(1);
+  $('vccVal').textContent = Vcc.toFixed(0);
+  $('rpVal').textContent  = Rp.toFixed(0);
+
+  const S = simulate(Vbm, Vbb, Vcc, Rp);
+  $('thetaVal').textContent = S.thetaDeg.toFixed(0);
+  $('statTheta').textContent = S.thetaDeg.toFixed(0)+'°';
+  $('statIcm1').textContent = S.Icm1.toFixed(2)+'A';
+  $('statVcm').textContent  = S.Vcm.toFixed(1)+'V';
+  $('statEta').textContent  = (S.eta*100).toFixed(0)+'%';
+
+  const stateEl = $('stateText');
+  const stateDesc = $('stateDesc');
+  stateEl.className = 'state';
+  let sColor, sText, sDesc;
+  if(S.state === 0){
+    sColor = 'under'; sText = '欠压状态'; sDesc = 'Vcm = '+S.Vcm.toFixed(1)+'V < 0.85Vcc';
+  } else if(S.state === 1){
+    sColor = 'critical'; sText = '临界状态'; sDesc = 'Vcm ≈ '+S.Vcm.toFixed(1)+'V，效率最高';
+  } else {
+    sColor = 'over'; sText = '过压状态'; sDesc = '电流波形出现凹陷，Vcm受限';
+  }
+  stateEl.classList.add(sColor);
+  stateEl.textContent = sText;
+  stateDesc.textContent = sDesc;
+
+  // 波形
+  const N = S.N;
+  const icMax = Math.max(...S.icWave);
+  const vbMax = Math.max(...S.vbWave);
+  const vbMin = Math.min(...S.vbWave);
+  const vcMax = Math.max(...S.vcWave);
+  const vcMin = Math.min(...S.vcWave);
+
+  drawWaveform(cVbm, S.vbWave, 'rgb(96,165,250)', 'vb', 'V', 0);
+  drawWaveform(cIc,  S.icWave, 'rgb(251,191,36)', 'ic', 'A', 0);
+  drawWaveform(cVc,  S.vcWave, 'rgb(52,211,153)', 'vc', 'V', 0);
+
+  drawSpectrum(sIc, S.icSpec, 'rgb(251,191,36)');
+  drawSpectrum(sVc, S.vcSpec, 'rgb(52,211,153)');
+}
+
+// ============ 绑定事件 ============
+vbmSlider.addEventListener('input', update);
+vbbSlider.addEventListener('input', update);
+vccSlider.addEventListener('input', update);
+rpSlider.addEventListener('input', update);
+
+// ============ 窗口调整 ============
+let resizeTimer;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(update, 150);
+});
+
+// ============ 启动 ============
+setTimeout(update, 50);
+</script>
+</body>
+</html>
